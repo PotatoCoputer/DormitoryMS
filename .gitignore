@@ -23,3 +23,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Local files
+work_plan.md
