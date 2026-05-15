@@ -123,13 +123,13 @@ CREATE INDEX idx_maintenance_status ON maintenance_requests(status);
 
 -- Admin user (password: admin123)
 INSERT INTO users (username, password_hash, full_name, email, phone, role) VALUES
-('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh.G', 'ผู้ดูแลระบบ', 'admin@dormitory.com', '081-000-0001', 'admin');
+('admin', '$2b$10$6QwX1PP8L9OexBGYosBB.ekpIWCX2J30yfPDfTo2l08R1JBfVsHAu', 'ผู้ดูแลระบบ', 'admin@dormitory.com', '081-000-0001', 'admin');
 
 -- Tenant users (password: tenant123)
 INSERT INTO users (username, password_hash, full_name, email, phone, role) VALUES
-('tenant1', '$2a$10$GRZaGMRu7M0R/CnuEnRSieRKkECkIulX4yf8lGQ5OJhivLGEJJ8vu', 'สมชาย ใจดี', 'somchai@email.com', '081-111-1111', 'tenant'),
-('tenant2', '$2a$10$GRZaGMRu7M0R/CnuEnRSieRKkECkIulX4yf8lGQ5OJhivLGEJJ8vu', 'สมหญิง รักเรียน', 'somying@email.com', '082-222-2222', 'tenant'),
-('tenant3', '$2a$10$GRZaGMRu7M0R/CnuEnRSieRKkECkIulX4yf8lGQ5OJhivLGEJJ8vu', 'วิชัย สุขสันต์', 'wichai@email.com', '083-333-3333', 'tenant');
+('tenant1', '$2b$10$Ot36iq3zhZxQc/neJ1TqNONgr0FTpQDLm.nIKUKjwux8DVUAjSo46', 'สมชาย ใจดี', 'somchai@email.com', '081-111-1111', 'tenant'),
+('tenant2', '$2b$10$Ot36iq3zhZxQc/neJ1TqNONgr0FTpQDLm.nIKUKjwux8DVUAjSo46', 'สมหญิง รักเรียน', 'somying@email.com', '082-222-2222', 'tenant'),
+('tenant3', '$2b$10$Ot36iq3zhZxQc/neJ1TqNONgr0FTpQDLm.nIKUKjwux8DVUAjSo46', 'วิชัย สุขสันต์', 'wichai@email.com', '083-333-3333', 'tenant');
 
 -- Rooms
 INSERT INTO rooms (room_number, floor, room_type, monthly_rent, water_rate, electricity_rate, status, description) VALUES

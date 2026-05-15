@@ -1,0 +1,64 @@
+version: '3.8'
+
+# ─────────────────────────────────────────────────
+#  DormMS — Docker Compose
+#  รัน: docker-compose up --build
+#  เข้าใช้: http://localhost
+# ─────────────────────────────────────────────────
+
+services:
+
+  # ── 1. PostgreSQL Database ──────────────────────
+  postgres:
+    image: postgres:15-alpine
+    container_name: dormms_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dormitory_ms
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/src/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports:
+      - "5432:5432"      # เข้าถึง DB ได้จาก host ถ้าต้องการ
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d dormitory_ms"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── 2. Backend (Node.js / Express) ─────────────
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: dormms_server
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:1234@postgres:5432/dormitory_ms?sslmode=disable
+      JWT_SECRET: dormms-super-secret-jwt-key-2024
+      PORT: 5000
+      NODE_ENV: production
+    # ไม่ต้อง expose port 5000 ออก host เพราะ Nginx proxy แทน
+    # ports:
+    #   - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy   # รอ DB พร้อมก่อนค่อยรัน
+
+  # ── 3. Frontend (React + Nginx) ─────────────────
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: dormms_client
+    restart: unless-stopped
+    ports:
+      - "80:80"          # เข้าที่ http://localhost
+    depends_on:
+      - server
+
+# ── Persistent volume สำหรับ DB data ──────────────
+volumes:
+  postgres_data:

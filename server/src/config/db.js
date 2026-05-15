@@ -3,7 +3,8 @@ require('dotenv').config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  // SSL เปิดเฉพาะเมื่อใช้ Cloud DB (เช่น Railway, Supabase) โดยตั้ง PGSSLMODE=require
+  ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : false,
 });
 
 pool.on('connect', () => {
