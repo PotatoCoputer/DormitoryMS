@@ -121,7 +121,7 @@ router.post('/', authenticate, async (req, res) => {
 router.put('/:id/status', authenticate, requireAdmin, async (req, res) => {
   const { status, admin_notes } = req.body;
 
-  if (!status || !['pending', 'in_progress', 'resolved', 'cancelled'].includes(status)) {
+  if (!status || !['pending', 'in_progress', 'resolved'].includes(status)) {
     return res.status(400).json({ success: false, message: 'Invalid status' });
   }
 
@@ -130,7 +130,7 @@ router.put('/:id/status', authenticate, requireAdmin, async (req, res) => {
       `UPDATE maintenance_requests SET
         status = $1,
         admin_notes = COALESCE($2, admin_notes),
-        resolved_at = CASE WHEN $1 = 'resolved' THEN NOW() ELSE resolved_at END,
+        resolved_at = CASE WHEN $1::varchar = 'resolved' THEN NOW() ELSE resolved_at END,
         updated_at = NOW()
        WHERE id = $3 RETURNING *`,
       [status, admin_notes, req.params.id]

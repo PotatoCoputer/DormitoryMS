@@ -4,6 +4,176 @@ const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Tenants
+ *   description: จัดการข้อมูลผู้เช่า
+ *
+ * /api/tenants:
+ *   get:
+ *     tags: [Tenants]
+ *     summary: ดูรายการผู้เช่าทั้งหมด (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     responses:
+ *       200:
+ *         description: รายการผู้เช่าทั้งหมด
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Tenant'
+ *   post:
+ *     tags: [Tenants]
+ *     summary: เพิ่มผู้เช่าใหม่ (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [first_name, last_name, national_id, phone, room_id, move_in_date]
+ *             properties:
+ *               first_name: { type: string, example: สมชาย }
+ *               last_name: { type: string, example: ใจดี }
+ *               national_id: { type: string, example: '1100100100199' }
+ *               phone: { type: string, example: 081-999-9999 }
+ *               email: { type: string, example: user@email.com }
+ *               room_id: { type: integer, example: 3 }
+ *               move_in_date: { type: string, format: date, example: '2026-05-01' }
+ *               create_user: { type: boolean, example: true }
+ *               username: { type: string, example: newuser }
+ *               password: { type: string, example: password123 }
+ *     responses:
+ *       201: { description: เพิ่มผู้เช่าสำเร็จ }
+ *       409: { description: เลขบัตรประชาชน, email หรือ username ซ้ำ }
+ *
+ * /api/tenants/{id}:
+ *   put:
+ *     tags: [Tenants]
+ *     summary: แก้ไขข้อมูลผู้เช่า (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: อัปเดตสำเร็จ }
+ *   delete:
+ *     tags: [Tenants]
+ *     summary: ลบผู้เช่า (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: ลบสำเร็จ }
+ *
+ * /api/tenants/me:
+ *   get:
+ *     tags: [Tenants]
+ *     summary: ดูข้อมูลตัวเอง (Tenant)
+ *     security: [{ BearerAuth: [] }]
+ *     responses:
+ *       200: { description: ข้อมูลผู้เช่า }
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: Bills
+ *   description: จัดการบิลค่าเช่า
+ *
+ * /api/bills:
+ *   get:
+ *     tags: [Bills]
+ *     summary: ดูรายการบิล (Admin=ทั้งหมด, Tenant=ของตัวเอง)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: month
+ *         schema: { type: integer }
+ *         description: กรองตามเดือน (1-12)
+ *       - in: query
+ *         name: year
+ *         schema: { type: integer }
+ *         description: กรองตามปี (เช่น 2026)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, paid, overdue]
+ *         description: กรองตามสถานะ
+ *     responses:
+ *       200:
+ *         description: รายการบิล
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Bill'
+ *   post:
+ *     tags: [Bills]
+ *     summary: สร้างบิลใหม่ (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tenant_id, room_id, bill_month, bill_year]
+ *             properties:
+ *               tenant_id: { type: integer, example: 1 }
+ *               room_id: { type: integer, example: 1 }
+ *               bill_month: { type: integer, example: 5 }
+ *               bill_year: { type: integer, example: 2026 }
+ *               water_units: { type: number, example: 10 }
+ *               electricity_units: { type: number, example: 150 }
+ *               other_fees: { type: number, example: 0 }
+ *               notes: { type: string }
+ *     responses:
+ *       201: { description: สร้างบิลสำเร็จ }
+ *       409: { description: บิลเดือนนี้มีอยู่แล้ว }
+ *
+ * /api/bills/{id}/status:
+ *   put:
+ *     tags: [Bills]
+ *     summary: อัปเดตสถานะการชำระเงิน (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status: { type: string, enum: [pending, paid, overdue] }
+ *               paid_date: { type: string, format: date, example: '2026-05-10' }
+ *     responses:
+ *       200: { description: อัปเดตสำเร็จ }
+ */
+
 // GET /api/tenants - Get all tenants (Admin only)
 router.get('/', authenticate, requireAdmin, async (req, res) => {
   try {

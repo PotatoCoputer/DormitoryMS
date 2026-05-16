@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import { Search, Plus, Settings, Wrench, User, CalendarDays, MessageSquare, X } from 'lucide-react';
 
-const STATUS_TH = { pending:'รอดำเนินการ', in_progress:'กำลังดำเนินการ', resolved:'แก้ไขแล้ว', cancelled:'ยกเลิก' };
+const STATUS_TH = { pending:'รอดำเนินการ', in_progress:'กำลังดำเนินการ', resolved:'แก้ไขแล้ว' };
 const PRIORITY_TH = { low:'ต่ำ', medium:'ปานกลาง', high:'สูง', urgent:'เร่งด่วน' };
 
-function RequestCard({ r, isAdmin, onUpdateStatus }) {
+function RequestCard({ r, isAdmin, onUpdateStatus, onDelete }) {
   return (
     <div className="card" style={{ padding:16 }}>
       <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
@@ -36,9 +36,20 @@ function RequestCard({ r, isAdmin, onUpdateStatus }) {
           )}
         </div>
         {isAdmin && (
-          <button className="btn btn-sm btn-secondary" onClick={() => onUpdateStatus(r)} style={{ flexShrink:0 }}>
-            <Settings size={12} /> อัพเดต
-          </button>
+          <div style={{ display:'flex', flexDirection:'column', gap:8, flexShrink:0 }}>
+            <button className="btn btn-sm btn-secondary" onClick={() => onUpdateStatus(r)}>
+              <Settings size={12} /> อัพเดต
+            </button>
+            {r.status === 'resolved' ? (
+              <button className="btn btn-sm" style={{ background:'rgba(74,222,128,0.1)', color:'#22c55e', border:'1px solid rgba(74,222,128,0.2)' }} onClick={() => { if(window.confirm('คุณต้องการลบรายการที่เสร็จแล้วนี้ออกจากระบบหรือไม่?')) onDelete(r.id); }}>
+                ✓ เสร็จแล้ว
+              </button>
+            ) : (
+              <button className="btn btn-sm" style={{ background:'rgba(239,68,68,0.1)', color:'#ef4444', border:'1px solid rgba(239,68,68,0.2)' }} onClick={() => { if(window.confirm('คุณต้องการยกเลิกและลบรายการแจ้งซ่อมนี้หรือไม่?')) onDelete(r.id); }}>
+                <X size={12} /> ยกเลิก
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -83,6 +94,11 @@ export default function MaintenancePage() {
     finally { setSaving(false); }
   };
 
+  const handleDelete = async (id) => {
+    try { await api.delete(`/maintenance/${id}`); toast.success('ลบรายการสำเร็จ'); load(); }
+    catch (err) { toast.error(err.response?.data?.message||'เกิดข้อผิดพลาด'); }
+  };
+
   const filtered = requests.filter(r => {
     const mS = !filterStatus || r.status === filterStatus;
     const mQ = !search || `${r.title} ${r.first_name||''} ${r.last_name||''} ${r.room_number||''}`.toLowerCase().includes(search.toLowerCase());
@@ -117,7 +133,7 @@ export default function MaintenancePage() {
           </div>
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {filtered.map(r => <RequestCard key={r.id} r={r} isAdmin={isAdmin} onUpdateStatus={openStatus} />)}
+            {filtered.map(r => <RequestCard key={r.id} r={r} isAdmin={isAdmin} onUpdateStatus={openStatus} onDelete={handleDelete} />)}
           </div>
         )}
 
@@ -179,7 +195,6 @@ export default function MaintenancePage() {
                   <option value="pending">รอดำเนินการ</option>
                   <option value="in_progress">กำลังดำเนินการ</option>
                   <option value="resolved">แก้ไขแล้ว</option>
-                  <option value="cancelled">ยกเลิก</option>
                 </select>
               </div>
               <div className="form-group">

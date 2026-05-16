@@ -3,6 +3,93 @@ const router = express.Router();
 const pool = require('../config/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Bills
+ *   description: จัดการบิลค่าเช่า
+ *
+ * /api/bills:
+ *   get:
+ *     tags: [Bills]
+ *     summary: ดูรายการบิล (Admin=ทั้งหมด, Tenant=ของตัวเอง)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: month
+ *         schema: { type: integer }
+ *         description: กรองตามเดือน (1-12)
+ *       - in: query
+ *         name: year
+ *         schema: { type: integer }
+ *         description: กรองตามปี (เช่น 2026)
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, paid, overdue]
+ *         description: กรองตามสถานะ
+ *     responses:
+ *       200:
+ *         description: รายการบิล
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Bill'
+ *   post:
+ *     tags: [Bills]
+ *     summary: สร้างบิลใหม่ (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [tenant_id, room_id, bill_month, bill_year]
+ *             properties:
+ *               tenant_id: { type: integer, example: 1 }
+ *               room_id: { type: integer, example: 1 }
+ *               bill_month: { type: integer, example: 5 }
+ *               bill_year: { type: integer, example: 2026 }
+ *               water_units: { type: number, example: 10 }
+ *               electricity_units: { type: number, example: 150 }
+ *               other_fees: { type: number, example: 0 }
+ *               notes: { type: string }
+ *     responses:
+ *       201: { description: สร้างบิลสำเร็จ }
+ *       409: { description: บิลเดือนนี้มีอยู่แล้ว }
+ *
+ * /api/bills/{id}/status:
+ *   put:
+ *     tags: [Bills]
+ *     summary: อัปเดตสถานะการชำระเงิน (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status: { type: string, enum: [pending, paid, overdue] }
+ *               paid_date: { type: string, format: date, example: '2026-05-10' }
+ *     responses:
+ *       200: { description: อัปเดตสำเร็จ }
+ */
+
 // GET /api/bills - Get all bills (Admin: all, Tenant: own)
 router.get('/', authenticate, async (req, res) => {
   try {
@@ -51,6 +138,98 @@ router.get('/', authenticate, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+/**
+ * @swagger
+ * tags:
+ *   name: Maintenance
+ *   description: จัดการคำร้องแจ้งซ่อม
+ *
+ * /api/maintenance:
+ *   get:
+ *     tags: [Maintenance]
+ *     summary: ดูรายการแจ้งซ่อม (Admin=ทั้งหมด, Tenant=ของตัวเอง)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [pending, in_progress, resolved]
+ *         description: กรองตามสถานะ
+ *       - in: query
+ *         name: priority
+ *         schema:
+ *           type: string
+ *           enum: [low, medium, high, urgent]
+ *         description: กรองตามความเร่งด่วน
+ *     responses:
+ *       200:
+ *         description: รายการแจ้งซ่อม
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/MaintenanceRequest'
+ *   post:
+ *     tags: [Maintenance]
+ *     summary: สร้างคำร้องแจ้งซ่อมใหม่ (Tenant)
+ *     security: [{ BearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [title, description]
+ *             properties:
+ *               title: { type: string, example: ก๊อกน้ำรั่ว }
+ *               description: { type: string, example: ก๊อกน้ำรั่ว น้ำหยดตลอดเวลา }
+ *               priority: { type: string, enum: [low, medium, high, urgent], example: high }
+ *     responses:
+ *       201: { description: สร้างคำร้องสำเร็จ }
+ *
+ * /api/maintenance/{id}/status:
+ *   put:
+ *     tags: [Maintenance]
+ *     summary: อัปเดตสถานะแจ้งซ่อม (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [status]
+ *             properties:
+ *               status: { type: string, enum: [pending, in_progress, resolved] }
+ *               admin_notes: { type: string, example: ส่งช่างไปดูแล้ว }
+ *     responses:
+ *       200: { description: อัปเดตสำเร็จ }
+ *
+ * /api/maintenance/{id}:
+ *   delete:
+ *     tags: [Maintenance]
+ *     summary: ลบคำร้องแจ้งซ่อม (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: ลบสำเร็จ }
+ */
 
 // GET /api/bills/:id - Get single bill
 router.get('/:id', authenticate, async (req, res) => {

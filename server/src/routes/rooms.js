@@ -3,6 +3,98 @@ const router = express.Router();
 const pool = require('../config/db');
 const { authenticate, requireAdmin } = require('../middleware/auth');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Rooms
+ *   description: จัดการข้อมูลห้องพัก
+ *
+ * /api/rooms:
+ *   get:
+ *     tags: [Rooms]
+ *     summary: ดูรายการห้องทั้งหมด
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [available, occupied, maintenance]
+ *         description: กรองตามสถานะห้อง
+ *     responses:
+ *       200:
+ *         description: รายการห้องทั้งหมด
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Room'
+ *   post:
+ *     tags: [Rooms]
+ *     summary: เพิ่มห้องใหม่ (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [room_number, floor, monthly_rent]
+ *             properties:
+ *               room_number: { type: string, example: '305' }
+ *               floor: { type: integer, example: 3 }
+ *               room_type: { type: string, enum: [standard, deluxe, suite], example: standard }
+ *               monthly_rent: { type: number, example: 4000 }
+ *               water_rate: { type: number, example: 18 }
+ *               electricity_rate: { type: number, example: 8 }
+ *               status: { type: string, enum: [available, maintenance], example: available }
+ *               description: { type: string, example: 'ห้องมาตรฐาน ชั้น 3' }
+ *     responses:
+ *       201: { description: สร้างห้องสำเร็จ }
+ *       409: { description: หมายเลขห้องซ้ำ }
+ *
+ * /api/rooms/{id}:
+ *   put:
+ *     tags: [Rooms]
+ *     summary: แก้ไขข้อมูลห้อง (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               room_type: { type: string }
+ *               monthly_rent: { type: number }
+ *               status: { type: string }
+ *               description: { type: string }
+ *     responses:
+ *       200: { description: อัปเดตสำเร็จ }
+ *       404: { description: ไม่พบห้อง }
+ *   delete:
+ *     tags: [Rooms]
+ *     summary: ลบห้อง (Admin)
+ *     security: [{ BearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: ลบสำเร็จ }
+ *       400: { description: ไม่สามารถลบได้ (มีผู้เช่าอยู่) }
+ */
+
 // GET /api/rooms - Get all rooms
 router.get('/', authenticate, async (req, res) => {
   try {

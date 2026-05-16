@@ -4,8 +4,65 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
 
+/**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: เข้าสู่ระบบและสร้างบัญชี
+ *
+ * /api/auth/login:
+ *   post:
+ *     tags: [Auth]
+ *     summary: เข้าสู่ระบบ
+ *     description: รับ JWT token กลับมาเพื่อใช้ใน API อื่นๆ
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginRequest'
+ *     responses:
+ *       200:
+ *         description: เข้าสู่ระบบสำเร็จ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: Username หรือ Password ผิด
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *
+ * /api/auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: สร้างบัญชีผู้ใช้ใหม่
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [username, password, full_name, email]
+ *             properties:
+ *               username: { type: string, example: newuser }
+ *               password: { type: string, example: password123 }
+ *               full_name: { type: string, example: ชื่อ นามสกุล }
+ *               email: { type: string, example: user@email.com }
+ *               phone: { type: string, example: 081-000-0000 }
+ *               role: { type: string, enum: [admin, tenant], example: tenant }
+ *     responses:
+ *       201:
+ *         description: สร้างบัญชีสำเร็จ
+ *       409:
+ *         description: Username หรือ Email ซ้ำ
+ */
+
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
+
   const { username, password } = req.body;
 
   if (!username || !password) {

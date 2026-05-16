@@ -98,7 +98,7 @@ CREATE TABLE maintenance_requests (
   title VARCHAR(200) NOT NULL,
   description TEXT NOT NULL,
   priority VARCHAR(10) NOT NULL DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
-  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved', 'cancelled')),
+  status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved')),
   admin_notes TEXT,
   resolved_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT NOW(),
