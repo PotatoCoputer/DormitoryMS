@@ -1,8 +1,9 @@
 # 📡 API Documentation — Dormitory Management System
 
-> **Base URL (Dev):** `http://localhost:5000`  
+> **Base URL (Dev):** `http://localhost:5000/api`  
 > **Base URL (Docker):** `http://localhost/api`  
-> **Interactive UI:** [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
+> **Swagger UI (Dev):** [http://localhost:5000/api-docs](http://localhost:5000/api-docs)  
+> **Swagger UI (Docker):** [http://localhost/api-docs](http://localhost/api-docs)
 
 ---
 
