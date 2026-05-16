@@ -138,6 +138,18 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Create tenant error:', error);
+    // แปล PostgreSQL unique constraint error ให้เข้าใจง่าย
+    if (error.code === '23505') {
+      if (error.constraint === 'users_email_key') {
+        return res.status(409).json({ success: false, message: 'อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น' });
+      }
+      if (error.constraint === 'users_username_key') {
+        return res.status(409).json({ success: false, message: 'Username นี้ถูกใช้งานแล้ว กรุณาใช้ชื่ออื่น' });
+      }
+      if (error.constraint === 'tenants_national_id_key') {
+        return res.status(409).json({ success: false, message: 'เลขบัตรประชาชนนี้มีในระบบแล้ว' });
+      }
+    }
     res.status(500).json({ success: false, message: 'Server error' });
   } finally {
     client.release();
@@ -210,7 +222,13 @@ router.delete('/:id', authenticate, requireAdmin, async (req, res) => {
       await client.query("UPDATE rooms SET status = 'available', updated_at = NOW() WHERE id = $1", [tenant.room_id]);
     }
 
+    // Delete tenant record
     await client.query('DELETE FROM tenants WHERE id = $1', [req.params.id]);
+
+    // Delete associated user account (if exists) to free up email/username
+    if (tenant.user_id) {
+      await client.query('DELETE FROM users WHERE id = $1', [tenant.user_id]);
+    }
 
     await client.query('COMMIT');
     res.json({ success: true, message: 'Tenant deleted successfully' });

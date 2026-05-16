@@ -108,9 +108,13 @@ router.post('/', authenticate, requireAdmin, async (req, res) => {
     }
 
     const room = roomResult.rows[0];
-    const water_amount = (water_units || 0) * room.water_rate;
-    const electricity_amount = (electricity_units || 0) * room.electricity_rate;
-    const total_amount = parseFloat(room.monthly_rent) + water_amount + electricity_amount + (other_fees || 0);
+    // แปลงทุกค่าเป็น number ก่อนคำนวณ เพื่อป้องกัน string concat
+    const wUnits  = parseFloat(water_units)       || 0;
+    const eUnits  = parseFloat(electricity_units) || 0;
+    const oFees   = parseFloat(other_fees)        || 0;
+    const water_amount       = wUnits * parseFloat(room.water_rate);
+    const electricity_amount = eUnits * parseFloat(room.electricity_rate);
+    const total_amount       = parseFloat(room.monthly_rent) + water_amount + electricity_amount + oFees;
     const due_date = new Date(bill_year, bill_month - 1, 15); // Due on 15th of the month
 
     const result = await pool.query(
